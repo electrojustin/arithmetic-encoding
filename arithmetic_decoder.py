@@ -17,7 +17,7 @@ class ArithmeticDecoder:
     self.input_bits = bytes_to_bits(input_bytes[int(self.num_bits/8):])
     self.input_idx = 0
 
-
+  # Update our lower and upper bound.
   def UpdateBounds(self, symbol, probs):
     # Move the bounds according to the symbol given and the probability
     # distribution table. This is basically just linear interpolation.
@@ -29,7 +29,8 @@ class ArithmeticDecoder:
       print('Error! invalid bounds')
       self.stream_done = True
 
-
+  # Make sure our range is fairly large. If it's getting too small renormalize
+  # the boundaries and maybe read in more bits to |curr_val|.
   def MaybeRenormalize(self):
     while True:
       if self.upper_bound >> (self.num_bits - 1) == self.lower_bound >> (self.num_bits - 1):
@@ -83,12 +84,21 @@ class ArithmeticDecoder:
       self.curr_val |= self.input_bits[self.input_idx]
       self.input_idx += 1
 
+  # Normalize the probability table and make sure there are no 0 probabilities
+  def NormalizeProbabilities(self, probs):
+    ret = probs.copy()
+    ret = list(map(lambda x: x if x else 1, ret))
+    total = sum(ret)
+    return list(map(lambda x: x/total, ret))
+
 
   def IsEOS(self):
     return self.stream_done      
 
 
   def DecodeSymbol(self, probs):
+    probs = self.NormalizeProbabilities(probs)
+
     curr_range = self.upper_bound - self.lower_bound
     symbol = 0
     while self.lower_bound + int(sum(probs[:symbol+1]) * curr_range) <= self.curr_val:

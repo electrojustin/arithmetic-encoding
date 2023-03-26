@@ -10,13 +10,14 @@ class ArithmeticEncoder:
     self.upper_bound = self.max_val
     self.pending = 0
 
+  # Add a bit and all pending bits to the output.
   def OutputBitPlusPending(self, bit):
     self.output_bits.append(bit)
     while self.pending:
       self.output_bits.append(not bit)
       self.pending -= 1
 
-
+  # Update our lower and upper bound.
   def UpdateBounds(self, symbol, probs):
     # Move the bounds according to the symbol given and the probability
     # distribution table. This is basically just linear interpolation.
@@ -24,7 +25,8 @@ class ArithmeticEncoder:
     self.lower_bound += int(sum(probs[:symbol]) * curr_range)
     self.upper_bound = self.lower_bound + int(probs[symbol] * curr_range)
 
-
+  # Make sure our range is fairly large. If it's getting too small, output some
+  # bits and renormalize the boundaries.
   def MaybeRenormalize(self):
     while True:
       if self.upper_bound >> (self.num_bits - 1) == self.lower_bound >> (self.num_bits - 1):
@@ -60,14 +62,27 @@ class ArithmeticEncoder:
         self.upper_bound = ((self.upper_bound << 1) | ((self.max_val >> 1) + 1) | 1) & self.max_val
       else:
         break
+
+  # Normalize the probability table and make sure there are no 0 probabilities
+  def NormalizeProbabilities(self, probs):
+    ret = probs.copy()
+    ret = list(map(lambda x: x if x else 1, ret))
+    total = sum(ret)
+    return list(map(lambda x: x/total, ret))
    
      
   def EncodeSymbol(self, symbol, probs):
+    probs = self.NormalizeProbabilities(probs)
+
     self.UpdateBounds(symbol, probs)
     self.MaybeRenormalize()
 
+
   def Flush(self):
     ret = bits_to_bytes(self.output_bits)
+    for i in range(0, self.num_bits, 8):
+      ret.append((self.lower_bound >> (self.num_bits - 8 - i)) & 0xFF)
+
     self.output_bits = []
     self.lower_bound = 0
     self.upper_bound = self.max_val
