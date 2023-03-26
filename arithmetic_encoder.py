@@ -36,7 +36,7 @@ class ArithmeticEncoder:
 
         # Shift in a 1 into |upper_bound|
         self.upper_bound = ((self.upper_bound << 1) | 1) & self.max_val
-      elif self.lower_bound >> (self.num_bits - 2) >= 0b01 and self.upper_bound >> (self.num_bits - 2) < 0b11:
+      elif self.lower_bound >> (self.num_bits - 2) == 0b01 and self.upper_bound >> (self.num_bits - 2) == 0b10:
         # We can't determine the MSB, but we need to shift out info so we don't
         # converge lower and upper too close.
         # We know that the second most significant bit must be the opposite of

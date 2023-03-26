@@ -8,6 +8,7 @@ class ArithmeticDecoder:
     self.lower_bound = 0
     self.upper_bound = self.max_val
     self.stream_done = False
+    self.overrun = 0
 
     self.curr_val = 0
     for i in range(0, self.num_bits, 8):
@@ -43,7 +44,7 @@ class ArithmeticDecoder:
         # Shift in a 0 into |curr_val|. This is temporary, we will bitwise or
         # it with the next bit in the input stream.
         self.curr_val = (self.curr_val << 1) & self.max_val
-      elif self.lower_bound >> (self.num_bits - 2) >= 0b01 and self.upper_bound >> (self.num_bits - 2) < 0b11:
+      elif self.lower_bound >> (self.num_bits - 2) == 0b01 and self.upper_bound >> (self.num_bits - 2) == 0b10:
         # We can't determine the MSB, but we need to shift out info so we don't
         # converge lower and upper too close.
         # We know that the second most significant bit must be the opposite of
@@ -75,7 +76,9 @@ class ArithmeticDecoder:
       # Read in a new bit from the input stream, if we haven't consumed the
       # entire stream already.
       if self.input_idx >= len(self.input_bits):
-        self.stream_done = True
+        self.overrun += 1
+        if self.overrun == 8:
+          self.stream_done = True
         return
       self.curr_val |= self.input_bits[self.input_idx]
       self.input_idx += 1
