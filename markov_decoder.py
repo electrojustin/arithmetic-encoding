@@ -16,7 +16,7 @@ for i in range(0, 256):
   for j in range(0, 256):
     probs[-1].append(0)
 
-# Probability normalization logic that makes sure every outcome has a
+# Probability normalization logic that makes sure every outcome has at least a
 # 1/65536 chance of happening. I was worried that numbers which are "too small"
 # will result in floating point issues.
 def normalize_probs(probs):
